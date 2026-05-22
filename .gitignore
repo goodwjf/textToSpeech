@@ -1,0 +1,23 @@
+# 虚拟环境
+.venv/
+
+# Python 缓存
+__pycache__/
+*.pyc
+
+# macOS
+.DS_Store
+
+# 生成输出
+output/
+
+# 用户输入（音频、文本等个人数据）
+input/*.wav
+input/*.txt
+
+# 临时文件
+*.tmp.wav
+*.tmp
+
+# 测试残留
+input/test/

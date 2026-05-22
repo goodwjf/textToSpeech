@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TTS 语音生成</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #f5f5f7; color: #1d1d1f; line-height: 1.6;
+    min-height: 100vh; display: flex; justify-content: center;
+  }
+  .container { max-width: 720px; width: 100%; padding: 48px 24px; }
+  h1 { font-size: 28px; font-weight: 700; margin-bottom: 32px; color: #1d1d1f; }
+
+  /* === Section Title === */
+  .section-label {
+    display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; color: #6e6e73;
+  }
+
+  /* === Tabs === */
+  .tabs { display: flex; gap: 0; margin-bottom: 16px; background: #e8e8ed; border-radius: 10px; padding: 3px; }
+  .tab {
+    flex: 1; padding: 10px; border: none; border-radius: 8px;
+    background: transparent; color: #6e6e73; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: all .2s;
+  }
+  .tab.active { background: #fff; color: #1d1d1f; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+  .tab:hover:not(.active) { color: #1d1d1f; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* === Form Elements === */
+  textarea {
+    width: 100%; padding: 12px 16px; border: 1px solid #d2d2d7; border-radius: 10px;
+    font-size: 15px; font-family: inherit; resize: vertical; background: #fff;
+    transition: border-color .2s;
+  }
+  textarea:focus { outline: none; border-color: #0071e3; box-shadow: 0 0 0 3px rgba(0,113,227,.15); }
+  input[type="file"] { width: 100%; padding: 10px 0; font-size: 14px; color: #6e6e73; }
+  input[type="text"], select {
+    width: 100%; padding: 10px 14px; border: 1px solid #d2d2d7; border-radius: 10px;
+    font-size: 15px; font-family: inherit; background: #fff; transition: border-color .2s;
+  }
+  input[type="text"]:focus, select:focus {
+    outline: none; border-color: #0071e3; box-shadow: 0 0 0 3px rgba(0,113,227,.15);
+  }
+  .hint { font-size: 12px; color: #86868b; margin-top: 4px; }
+
+  /* === Buttons === */
+  .btn {
+    padding: 14px 24px; border: none; border-radius: 12px;
+    font-size: 16px; font-weight: 600; cursor: pointer; transition: background .2s;
+  }
+  .btn-primary { background: #0071e3; color: #fff; }
+  .btn-primary:hover:not(:disabled) { background: #0077ed; }
+  .btn-primary:disabled { background: #999; cursor: not-allowed; }
+  .btn-secondary {
+    background: #e8e8ed; color: #1d1d1f; padding: 10px 16px; font-size: 14px;
+  }
+  .btn-secondary:hover { background: #d2d2d7; }
+  .btn-full { width: 100%; margin-top: 8px; }
+  .btn-danger { background: #ff3b30; color: #fff; }
+  .btn-danger:hover { background: #d6302a; }
+  .btn-row { display: flex; gap: 8px; margin-top: 14px; }
+  .btn-row .btn { flex: 1; }
+
+  /* === Voice Section === */
+  .voice-section { margin-bottom: 24px; }
+  .voice-row { display: flex; gap: 8px; align-items: center; }
+  .voice-row select { flex: 1; }
+  .voice-row .btn { flex: none; white-space: nowrap; }
+  .voice-badge {
+    display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 4px;
+    background: #e8e8ed; color: #6e6e73; margin-left: 6px;
+  }
+  .voice-badge.default { background: #0071e3; color: #fff; }
+
+  /* === Add Voice Panel === */
+  #add-voice-panel {
+    background: #f5f5f7; border: 1px solid #d2d2d7; border-radius: 12px;
+    padding: 20px; margin-top: 12px;
+  }
+  #add-voice-panel .form-group { margin-bottom: 16px; }
+  #add-voice-panel .form-group:last-of-type { margin-bottom: 0; }
+  #add-voice-panel label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #6e6e73; }
+  .required { color: #ff3b30; font-weight: 400; }
+
+  /* === Card === */
+  .card {
+    background: #fff; border-radius: 14px; padding: 24px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08); margin-top: 24px;
+  }
+
+  /* === Progress === */
+  .progress-bar { width: 100%; height: 8px; background: #e8e8ed; border-radius: 4px; overflow: hidden; }
+  .progress-fill {
+    height: 100%; background: linear-gradient(90deg, #0071e3, #34c759);
+    border-radius: 4px; transition: width .4s ease; width: 0%;
+  }
+  #status-text { margin-top: 12px; font-size: 14px; color: #6e6e73; }
+  #status-text.error { color: #ff3b30; }
+
+  /* === Result === */
+  .result-msg { margin-bottom: 16px; font-size: 14px; color: #1d1d1f; }
+  .download-btn {
+    display: inline-block; padding: 12px 28px; border-radius: 12px;
+    background: #34c759; color: #fff; font-size: 15px; font-weight: 600;
+    text-decoration: none; transition: background .2s;
+  }
+  .download-btn:hover { background: #28a745; }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>TTS 语音生成</h1>
+
+  <!-- Voice Selector -->
+  <div class="voice-section">
+    <label class="section-label">参考声音</label>
+    <div class="voice-row">
+      <select id="voice-select">
+        <option value="">加载中...</option>
+      </select>
+      <button id="add-voice-btn" class="btn btn-secondary">＋ 添加</button>
+    </div>
+
+    <!-- Add Voice Panel -->
+    <div id="add-voice-panel" class="hidden">
+      <div class="form-group">
+        <label>声音名称</label>
+        <input type="text" id="new-voice-name" placeholder="如: Anna" maxlength="32">
+        <div class="hint">只能使用字母、数字、下划线和中文</div>
+      </div>
+      <div class="form-group">
+        <label>参考音频</label>
+        <input type="file" id="new-voice-audio" accept=".wav,.mp3,.m4a,.aac,.flac">
+      </div>
+      <div class="form-group">
+        <label>参考文本 <span class="required">* 必填</span></label>
+        <textarea id="new-voice-text" rows="4" placeholder="输入音频内容的逐字转录文本，声音克隆需要此文本"></textarea>
+      </div>
+      <div class="btn-row">
+        <button id="save-voice-btn" class="btn btn-primary">保存</button>
+        <button id="cancel-voice-btn" class="btn btn-secondary">取消</button>
+      </div>
+      <p id="voice-msg" class="hint" style="margin-top:10px;color:#ff3b30"></p>
+    </div>
+  </div>
+
+  <!-- Input Tabs -->
+  <div class="tabs">
+    <button class="tab active" data-tab="paste">粘贴文本</button>
+    <button class="tab" data-tab="upload">上传文件</button>
+  </div>
+
+  <form id="form">
+    <div class="tab-content active" id="tab-paste">
+      <textarea id="text-input" rows="8" placeholder="在此粘贴要转语音的文本..."></textarea>
+    </div>
+    <div class="tab-content" id="tab-upload">
+      <input type="file" id="file-input" accept=".txt">
+    </div>
+    <button type="submit" id="generate-btn" class="btn btn-primary btn-full">生成语音</button>
+  </form>
+
+  <!-- Progress -->
+  <div id="progress-area" class="card hidden">
+    <div class="progress-bar">
+      <div class="progress-fill" id="progress-fill"></div>
+    </div>
+    <p id="status-text">准备中...</p>
+  </div>
+
+  <!-- Result -->
+  <div id="result-area" class="card hidden">
+    <p class="result-msg">生成完成！</p>
+    <a id="download-link" class="download-btn">下载音频文件 (.wav)</a>
+  </div>
+</div>
+
+<script>
+// ── DOM refs ──
+const voiceSelect    = document.getElementById('voice-select');
+const addVoiceBtn    = document.getElementById('add-voice-btn');
+const addVoicePanel  = document.getElementById('add-voice-panel');
+const newVoiceName   = document.getElementById('new-voice-name');
+const newVoiceAudio  = document.getElementById('new-voice-audio');
+const newVoiceText   = document.getElementById('new-voice-text');
+const saveVoiceBtn   = document.getElementById('save-voice-btn');
+const cancelVoiceBtn = document.getElementById('cancel-voice-btn');
+const voiceMsg       = document.getElementById('voice-msg');
+
+const tabs           = document.querySelectorAll('.tab');
+const tabContents    = document.querySelectorAll('.tab-content');
+const textInput      = document.getElementById('text-input');
+const fileInput      = document.getElementById('file-input');
+const form           = document.getElementById('form');
+const generateBtn    = document.getElementById('generate-btn');
+
+const progressArea   = document.getElementById('progress-area');
+const progressFill   = document.getElementById('progress-fill');
+const statusText     = document.getElementById('status-text');
+const resultArea     = document.getElementById('result-area');
+const downloadLink   = document.getElementById('download-link');
+
+// ── Load voices ──
+async function loadVoices() {
+  try {
+    const resp = await fetch('/voices');
+    const voices = await resp.json();
+    voiceSelect.innerHTML = '';
+    voices.forEach(v => {
+      const opt = document.createElement('option');
+      opt.value = v.is_default ? '' : v.name;
+      opt.textContent = v.label;
+      if (v.is_default) opt.selected = true;
+      if (!v.has_ref_audio || !v.has_ref_text) {
+        opt.textContent += ' (文件缺失)';
+        opt.disabled = true;
+      }
+      voiceSelect.appendChild(opt);
+    });
+  } catch (e) {
+    voiceSelect.innerHTML = '<option value="">加载失败</option>';
+  }
+}
+loadVoices();
+
+// ── Tabs ──
+tabs.forEach(tab => {
+  tab.addEventListener('click', () => {
+    tabs.forEach(t => t.classList.remove('active'));
+    tabContents.forEach(c => c.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+  });
+});
+
+// ── Add Voice Panel ──
+addVoiceBtn.addEventListener('click', () => {
+  addVoicePanel.classList.toggle('hidden');
+  voiceMsg.textContent = '';
+  if (!addVoicePanel.classList.contains('hidden')) {
+    newVoiceName.focus();
+  }
+});
+
+cancelVoiceBtn.addEventListener('click', () => {
+  addVoicePanel.classList.add('hidden');
+  newVoiceName.value = '';
+  newVoiceAudio.value = '';
+  newVoiceText.value = '';
+  voiceMsg.textContent = '';
+});
+
+saveVoiceBtn.addEventListener('click', async () => {
+  const name = newVoiceName.value.trim();
+  const audioFile = newVoiceAudio.files[0];
+  const refText = newVoiceText.value.trim();
+
+  if (!name) { voiceMsg.textContent = '请输入声音名称'; return; }
+  if (!/^[\w\u4e00-\u9fff]+$/.test(name)) { voiceMsg.textContent = '名称只能包含字母、数字、下划线和中文'; return; }
+  if (!audioFile) { voiceMsg.textContent = '请选择参考音频'; return; }
+  if (!refText) { voiceMsg.textContent = '请输入参考文本'; return; }
+
+  saveVoiceBtn.disabled = true;
+  saveVoiceBtn.textContent = '保存中...';
+  voiceMsg.textContent = '';
+
+  const formData = new FormData();
+  formData.append('name', name);
+  formData.append('audio', audioFile);
+  formData.append('ref_text', refText);
+
+  try {
+    const resp = await fetch('/voices', { method: 'POST', body: formData });
+    if (!resp.ok) {
+      const err = await resp.json();
+      voiceMsg.textContent = err.detail || '保存失败';
+      return;
+    }
+    await loadVoices();
+    voiceSelect.value = name;
+    addVoicePanel.classList.add('hidden');
+    newVoiceName.value = '';
+    newVoiceAudio.value = '';
+    newVoiceText.value = '';
+    voiceMsg.textContent = '';
+  } catch (e) {
+    voiceMsg.textContent = '网络错误: ' + e.message;
+  } finally {
+    saveVoiceBtn.disabled = false;
+    saveVoiceBtn.textContent = '保存';
+  }
+});
+
+// ── Generate ──
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const activeTab = document.querySelector('.tab.active');
+  const isPaste = activeTab && activeTab.dataset.tab === 'paste';
+  const text = isPaste ? textInput.value.trim() : '';
+  const file = isPaste ? null : fileInput.files[0];
+
+  if (!text && !file) {
+    alert(isPaste ? '请粘贴文本' : '请上传 .txt 文件');
+    return;
+  }
+
+  generateBtn.disabled = true;
+  generateBtn.textContent = '生成中...';
+  resultArea.classList.add('hidden');
+  statusText.className = '';
+  statusText.textContent = '准备中...';
+  progressFill.style.width = '0%';
+  progressArea.classList.remove('hidden');
+
+  const formData = new FormData();
+  if (file) {
+    formData.append('file', file);
+  } else {
+    formData.append('text', text);
+  }
+  formData.append('voice', voiceSelect.value);
+
+  try {
+    const resp = await fetch('/generate', { method: 'POST', body: formData });
+    if (!resp.ok) {
+      const err = await resp.json();
+      alert('生成失败: ' + (err.detail || resp.statusText));
+      generateBtn.disabled = false;
+      generateBtn.textContent = '生成语音';
+      return;
+    }
+    const data = await resp.json();
+
+    const evtSource = new EventSource(`/progress/${data.task_id}`);
+
+    evtSource.onmessage = (event) => {
+      const task = JSON.parse(event.data);
+      const p = Math.max(0, Math.min(100, task.progress));
+      progressFill.style.width = p + '%';
+      statusText.textContent = task.status;
+
+      if (task.progress >= 100) {
+        evtSource.close();
+        generateBtn.disabled = false;
+        generateBtn.textContent = '生成语音';
+        downloadLink.href = `/download/${task.filename}`;
+        resultArea.classList.remove('hidden');
+      } else if (task.progress < 0) {
+        evtSource.close();
+        generateBtn.disabled = false;
+        generateBtn.textContent = '生成语音';
+        statusText.classList.add('error');
+      }
+    };
+
+    evtSource.onerror = () => {
+      evtSource.close();
+      generateBtn.disabled = false;
+      generateBtn.textContent = '生成语音';
+      statusText.textContent = '连接断开，请重试';
+      statusText.classList.add('error');
+    };
+
+  } catch (err) {
+    alert('请求失败: ' + err.message);
+    generateBtn.disabled = false;
+    generateBtn.textContent = '生成语音';
+  }
+});
+</script>
+</body>
+</html>

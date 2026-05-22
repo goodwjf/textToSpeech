@@ -1,0 +1,24 @@
+{
+  "model": "mlx-community/Qwen3-TTS-12Hz-1.7B-Base-8bit",
+  "input": {
+    "text_file": "input/text.txt",
+    "ref_audio": "input/ref_audio.wav",
+    "ref_text": "input/ref_text.txt"
+  },
+  "output": {
+    "dir": "output",
+    "filename": "output.wav",
+    "format": "wav"
+  },
+  "voice": {
+    "speed": 0.9,
+    "language": "English"
+  },
+  "personality": {
+    "enabled": true,
+    "model": "Qwen/Qwen3-1.7B-MLX-8bit",
+    "voice_description": "声音柔和、温暖、清晰，语速较慢且自然，适合非母语学习者跟听。 语气富有情感表达力，经常带有轻快的笑声或感叹，听起来亲切、鼓励人。发音标准、易懂，情感部分会稍稍放慢或加重语气来强调关键短语，便于学习者模仿。",
+    "character": "她是主要引导者和情感/话题的深入讨论者，扮演“温暖、共情、细腻”的角色经。常以亲切的方式开场，引导对话走向更深层的情感或实用表达。她更注重并用柔和的方式推进话题。整体形象是友好、支持性、像“大姐姐”或贴心老师，适合帮助学习者建立情感连接和自信",
+    "temperature": 0.3
+  }
+}
