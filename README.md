@@ -31,15 +31,12 @@ textToSpeech/
 需要 macOS Apple Silicon 和网络（首次运行需下载 ~4.9 GB 模型）。
 
 ```bash
-# 1. 确保你在项目根目录
-cd /path/to/generateChapter
+# 一键初始化（安装 uv、ffmpeg、虚拟环境、依赖）
+bash code/setup.sh
 
-# 2. 一键初始化（安装 uv、ffmpeg、虚拟环境、依赖）
-bash textToSpeech/code/setup.sh
-
-# 3. 准备参考音频
-#    把一段 3-10 秒的 WAV 录音放到 textToSpeech/input/ref_audio.wav
-#    并在 textToSpeech/input/ref_text.txt 中写入录音的原文
+# 准备参考音频
+# 把一段 3-10 秒的 WAV 录音放到 input/ref_audio.wav
+# 并在 input/ref_text.txt 中写入录音的原文
 ```
 
 初始化后，`setup.sh` 会在项目根目录创建 `.venv/` 虚拟环境。所有脚本会自动优先使用 `.venv/`，不存在时回退到 `~/mlx-audio-env/`。
